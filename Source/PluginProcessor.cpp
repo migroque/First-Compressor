@@ -34,6 +34,9 @@ FirstCompressorAudioProcessor::FirstCompressorAudioProcessor()
     ratio=dynamic_cast<juce::AudioParameterChoice*>(apvts.getParameter("Ratio"));
     jassert(ratio !=nullptr);
     
+    bypassed=dynamic_cast<juce::AudioParameterBool*>(apvts.getParameter("Bypassed"));
+    jassert(bypassed !=nullptr);
+    
 }
 
 FirstCompressorAudioProcessor::~FirstCompressorAudioProcessor()
@@ -172,6 +175,8 @@ void FirstCompressorAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
     auto block=juce::dsp::AudioBlock<float>(buffer);
     auto context=juce::dsp::ProcessContextReplacing<float>(block);
     
+    context.isBypassed=bypassed->get();
+    
     compressor.process(context);
 }
 
@@ -235,6 +240,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout FirstCompressorAudioProcesso
     }
     
     layout.add(std::make_unique<AudioParameterChoice>(ParameterID { "Ratio", 1 }, "Ratio", sa, 3));
+    
+    layout.add(std::make_unique<AudioParameterBool>(ParameterID{"Bypassed",1}, "Bypassed", false));
     
     return layout;
 }
