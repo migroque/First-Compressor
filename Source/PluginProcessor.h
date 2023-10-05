@@ -55,8 +55,17 @@ public:
     //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
+    
+    using APVTS=juce::AudioProcessorValueTreeState;
+    static APVTS::ParameterLayout createParameterLayout();
+    
+    APVTS apvts{ *this, nullptr, "Parameters", createParameterLayout() };
 
 private:
+    
+    juce::dsp::Compressor<float> compressor;
+    
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FirstCompressorAudioProcessor)
+    
 };

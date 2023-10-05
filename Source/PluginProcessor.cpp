@@ -95,6 +95,9 @@ void FirstCompressorAudioProcessor::prepareToPlay (double sampleRate, int sample
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
+    
+    
+    
 }
 
 void FirstCompressorAudioProcessor::releaseResources()
@@ -166,7 +169,7 @@ bool FirstCompressorAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* FirstCompressorAudioProcessor::createEditor()
 {
-    return new FirstCompressorAudioProcessorEditor (*this);
+    return new juce::GenericAudioProcessorEditor (*this);
 }
 
 //==============================================================================
@@ -175,12 +178,51 @@ void FirstCompressorAudioProcessor::getStateInformation (juce::MemoryBlock& dest
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
+    
+    juce::MemoryOutputStream mos(destData,true);
+    apvts.state.writeToStream(mos);
+    
 }
 
 void FirstCompressorAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
+    auto tree=juce::ValueTree::readFromData(data, sizeInBytes);
+    if (tree.isValid()){
+        apvts.replaceState(tree);
+    }
+}
+
+juce::AudioProcessorValueTreeState::ParameterLayout FirstCompressorAudioProcessor::createParameterLayout(){
+    APVTS::ParameterLayout layout;
+    
+    using namespace juce;
+    layout.add(std::make_unique<AudioParameterFloat>(ParameterID { "Threshold", 1 },
+                                                     "Threshold",
+                                                     NormalisableRange<float>(-60, 12, 1, 1),
+                                                     0));
+    
+    auto attackReleaseRange=NormalisableRange<float>(5, 500, 1, 1);
+    
+    layout.add(std::make_unique<AudioParameterFloat>(ParameterID { "Attack", 1 },
+                                                     "Attack",
+                                                     attackReleaseRange,
+                                                     50));
+    layout.add(std::make_unique<AudioParameterFloat>(ParameterID { "Release", 1 },
+                                                     "Release",
+                                                     attackReleaseRange,
+                                                     250));
+    
+    auto choices=std::vector<double>{1,1.5,2,3,4,5,6,7,8,10,15,20,50,100};
+    juce::StringArray sa;
+    for (auto choice:choices){
+        sa.add(juce::String(choice,1));
+    }
+    
+    layout.add(std::make_unique<AudioParameterChoice>(ParameterID { "Ratio", 1 }, "Ratio", sa, 3));
+    
+    return layout;
 }
 
 //==============================================================================
