@@ -10,7 +10,7 @@
 
 /*
 DSP Roadmap:
-  1) Figure out how to split the audio into 3 bands
+  1) Figure out how to split the audio into 3 bands (Doing, using Linkwitz Riley)
   2) Create parameters to control where the splits happen
   3) Prove that splitting into 3 bands produces no audible artifacts
   4) Create audio parameters for the 3 compressor bands (Need to live on each band instance)
@@ -169,6 +169,13 @@ private:
    
     
     CompressorBand compressor;
+    
+    using Filter=juce::dsp::LinkwitzRileyFilter<float>;
+    Filter LP,HP;
+    
+    juce::AudioParameterFloat* lowCrossover {nullptr};
+    
+    std::array<juce::AudioBuffer<float>, 2> filterBuffers;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FirstCompressorAudioProcessor)
     
