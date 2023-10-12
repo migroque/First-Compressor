@@ -60,6 +60,9 @@ enum Names
     Solo_Low_Band,
     Solo_Mid_Band,
     Solo_High_Band,
+    
+    Gain_In,
+    Gain_Out,
 };
 
 inline const std::map<Names,juce::String>& GetParams(){
@@ -88,6 +91,8 @@ inline const std::map<Names,juce::String>& GetParams(){
         {Solo_Low_Band,"Solo Low Band"},
         {Solo_Mid_Band,"Solo Mid Band"},
         {Solo_High_Band,"Solo High Band"},
+        {Gain_In,"Gain In"},
+        {Gain_Out,"Gain Out"},
     }
     ;
     
@@ -202,6 +207,19 @@ private:
     juce::AudioParameterFloat* midHighCrossover {nullptr};
     
     std::array<juce::AudioBuffer<float>, 3> filterBuffers;
+    
+    juce::dsp::Gain<float> inputGain,outputGain;
+    juce::AudioParameterFloat* inputGainParam {nullptr};
+    juce::AudioParameterFloat* outputGainParam {nullptr};
+    
+    template<typename T,typename U>
+    void applyGain(T& buffer, U& gain){
+        auto block=juce::dsp::AudioBlock<float>(buffer);
+        auto context=juce::dsp::ProcessContextReplacing<float>(block);
+        
+        gain.process(context);
+    }
+    
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FirstCompressorAudioProcessor)
     

@@ -71,6 +71,9 @@ FirstCompressorAudioProcessor::FirstCompressorAudioProcessor()
     floathelper(lowMidCrossover, Names::Low_Mid_Crossover_Freq);
     floathelper(midHighCrossover, Names::Mid_High_Crossover_Freq);
     
+    floathelper(inputGainParam, Names::Gain_In);
+    floathelper(outputGainParam, Names::Gain_Out);
+    
     LP1.setType(juce::dsp::LinkwitzRileyFilterType::lowpass);
     HP1.setType(juce::dsp::LinkwitzRileyFilterType::highpass);
     
@@ -171,9 +174,16 @@ void FirstCompressorAudioProcessor::prepareToPlay (double sampleRate, int sample
     LP2.prepare(spec);
     HP2.prepare(spec);
     
+    inputGain.prepare(spec);
+    outputGain.prepare(spec);
+    
+    inputGain.setRampDurationSeconds(0.05);
+    outputGain.setRampDurationSeconds(0.05);
+    
     for (auto buffer:filterBuffers){
         buffer.setSize(spec.numChannels, samplesPerBlock);
     }
+    
 }
 
 void FirstCompressorAudioProcessor::releaseResources()
@@ -223,6 +233,10 @@ void FirstCompressorAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
     
+    inputGain.setGainDecibels(inputGainParam->get());
+    outputGain.setGainDecibels(outputGainParam->get());
+    
+    applyGain(buffer,inputGain);
     
 //    compressor.updateCompressorSettings();
 //    compressor.process(buffer);
@@ -304,6 +318,7 @@ void FirstCompressorAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
         }
     }
     
+    applyGain(buffer, outputGain);
     
     
 }
@@ -347,6 +362,18 @@ juce::AudioProcessorValueTreeState::ParameterLayout FirstCompressorAudioProcesso
     using namespace juce;
     using namespace Params;
     const auto& params=GetParams();
+    
+    auto gainRange=NormalisableRange<float>(-24.f, 24.f, .5f, 1.f);
+    
+    layout.add(std::make_unique<AudioParameterFloat>(ParameterID { params.at(Names::Gain_In), 5 },
+                                                     params.at(Names::Gain_In),
+                                                     gainRange,
+                                                     0));
+    
+    layout.add(std::make_unique<AudioParameterFloat>(ParameterID { params.at(Names::Gain_Out), 5 },
+                                                     params.at(Names::Gain_Out),
+                                                     gainRange,
+                                                     0));
     
     // CHANGE AND OPTIMIZE ALL OF THIS
     layout.add(std::make_unique<AudioParameterFloat>(ParameterID { params.at(Names::Threshold_Low_Band), 3 },
